@@ -2,32 +2,20 @@
 /**
  * Plugin Name: Data Scrapper
  * Plugin URI: http://www.mywebsite.com/my-first-plugin
- * Description: Data Scrapper requires the DS Proxy plugin to be installed and activated.
+ * Description: Data Scrapper.
 
  * Version: 1.0
  * Author: Cloudtach
  * Author URI: https://cloudtach.com/
  */
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 require 'vendor/autoload.php';
 
-add_action( 'admin_init', 'child_plugin_has_parent_plugin' );
-function child_plugin_has_parent_plugin() {
-    if ( is_admin() && current_user_can( 'activate_plugins' ) &&  !is_plugin_active( 'ds-proxy/ds-proxy.php' ) ) {
-        add_action( 'admin_notices', 'child_plugin_notice' );
-
-        deactivate_plugins( plugin_basename( __FILE__ ) ); 
-
-        if ( isset( $_GET['activate'] ) ) {
-            unset( $_GET['activate'] );
-        }
-    }
-}
-
-function child_plugin_notice(){
-    ?><div class="error"><p>Sorry, Data Scrapper requires the DS Proxy Plugin plugin to be installed and active.</p></div><?php
-}
+define( 'ds_proxy_PLUGIN_NAME', basename( dirname( __FILE__ ) ) . '/' . basename( __FILE__ ) );
 
 function DS_enqueue_links()
 {
@@ -45,6 +33,14 @@ add_action('admin_enqueue_scripts', 'DS_enqueue_links');
 
 if (is_admin()) {
     include(plugin_dir_path(__FILE__) . '/admin/admin-settings.php');
+    require_once( plugin_dir_path(__FILE__) . '/admin/class-wp-proxy.php');
+
+    function ds_proxy() {
+        return ds_proxy::instance();
+    }
+    
+    $GLOBALS['ds_proxy'] = ds_proxy();
+
 }
 add_action('wp_ajax_ebay_scrapper_func', 'ebay_scrapper_func');
 function ebay_scrapper_func()
