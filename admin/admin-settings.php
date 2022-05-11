@@ -6,9 +6,10 @@
 </style>
 <?php
 function DATA_SRAPPER_add_settings_page() {
-    add_options_page( 'Data Scrapper', 'Data Scrapper', 'manage_options', 'DATA_SRAPPER-Settings', 'DATA_SRAPPER_render_plugin_settings_page' );
+    add_options_page( 'Data Scrapper', 'Data Scrapper', 'manage_options', 'ds-settings', 'DATA_SRAPPER_render_plugin_settings_page' );
 }
 add_action( 'admin_menu', 'DATA_SRAPPER_add_settings_page' );
+
 
 function DATA_SRAPPER_render_plugin_settings_page(){
     ?>
