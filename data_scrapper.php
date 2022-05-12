@@ -66,36 +66,69 @@ function ebay_scrapper_func()
     $desc = $xpath->evaluate("//p[@class='aditem-main--middle--description']");
     $addId = $xpath->evaluate("//article");
     $img = $xpath->evaluate("//article//div[@class='imagebox srpimagebox']/img");
-    // print_r($addId);
-    // return;
 
     foreach ($titles as $t) {
-        // $extractedTitles[] = $title->textContent.PHP_EOL;
-        $title =  $t->textContent . PHP_EOL;
-        // print_r($title);
-        $id = wp_insert_post(array(
-            'post_title'=> $title, 
-            'post_type'=> 'post', 
-            'post_status'=> 'publish',
-            'post_content'=> 'demo text'
-          ));
-          if($id ){
-              echo 'ubaod';
-          }
+        $title =  $t->textContent . PHP_EOL;   
     }
     
     foreach ($desc as $d) {
-        // $extractedTitles[] = $title->textContent.PHP_EOL;
-        echo $d->textContent . PHP_EOL;
+        $description = $d->textContent . PHP_EOL;
     }
     foreach ($addId as $add) {
-        $add_id[] = trim($add->getAttribute('data-adid'));
+        $add_id = trim($add->getAttribute('data-adid'));
     }
     // print_r($add_id);
     foreach($img as $i){
-        $img_all1[] = trim($i->getAttribute('src'));
+        $img_all1 = trim($i->getAttribute('src'));
+        $image_name = basename($img_all1);
         
-    }
+        $postId = wp_insert_post(array(
+        'post_title'=> $title,
+        'post_type'=> 'post', 
+        'post_status'=> 'publish',
+        'post_content'=> $description,
+      ));
+      
+      
+        $upload = wp_upload_bits( $image_name , null, file_get_contents($img_all1, FILE_USE_INCLUDE_PATH));
+        
+        // check and return file type
+        $imageFile = $upload['file'];
+        $wpFileType = wp_check_filetype($imageFile, null);
+        
+        // Attachment attributes for file
+        $attachment = array(
+        'post_mime_type' => $wpFileType['type'],  // file type
+        'post_title' => sanitize_file_name($imageFile),  // sanitize and use image name as file name
+        'post_content' => '',  // could use the image description here as the content
+        'post_status' => 'inherit'
+        );
+        
+        // insert and return attachment id
+        $attachmentId = wp_insert_attachment( $attachment, $imageFile, $postId );
+        
+        // insert and return attachment metadata
+        $attachmentData = wp_generate_attachment_metadata( $attachmentId, $imageFile);
+        
+        // update and return attachment metadata
+        wp_update_attachment_metadata( $attachmentId, $attachmentData );
+        
+        // finally, associate attachment id to post id
+        $success = set_post_thumbnail( $postId, $attachmentId );
+        
+        // was featured image associated with post?
+        if($success){
+        
+        $message = $image_name. ' has been added as featured image to post.';
+        echo $message;
+        
+        } else {
+        
+        $message = $image_name . ' has NOT been added as featured image to post.';
+        echo $message;
+        
+        }
+      }
     
 }
 
