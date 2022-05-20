@@ -119,7 +119,7 @@ class ds_proxy {
 	 * @since 1.0
 	 */
 	public function options_page() {
-		add_options_page( 'DS Proxy', esc_html__( 'DS Proxy', 'wp-proxy' ), 'manage_options', 'ds_proxy', array( $this, 'ds_proxy_option' ) );
+		add_options_page( 'DS Proxy', esc_html__( 'DS Proxy', 'wp-proxy' ), 'manage_options', 'ds-proxy', array( $this, 'ds_proxy_option' ) );
 		if ( isset( $_POST['option_page'] ) && 'ds_proxy' === sanitize_text_field( wp_unslash( $_POST['option_page'] ) ) && isset( $_POST['_wpnonce'] ) ) {
 			if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'ds_proxy-options' ) ) {
 				$ds_proxy_options = $this->options;
@@ -231,7 +231,7 @@ class ds_proxy {
 			$wp_admin_bar->add_node(
 				array(
 					'id'    => 'ds_proxy',
-					'title' => __( 'WP Proxy' ),
+					'title' => __( 'Ds Proxy' ),
 					'href'  => $url,
 				)
 			);
