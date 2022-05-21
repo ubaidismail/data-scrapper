@@ -27,9 +27,10 @@ function wp_ds_activation_hook()
 
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
-    $table_name = $wpdb->prefix . 'ebay_listings';
+    $table_name1 = $wpdb->prefix . 'ebay_listings';
+    // $table_name2 = $wpdb->prefix . 'ebay_listings_permenent';
 
-    $sql = "CREATE TABLE `$table_name` (
+    $sql1 = "CREATE TABLE `$table_name1` (
         `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
         `title` text(255) NOT NULL,
         `description` text(255) NOT NULL,
@@ -43,11 +44,28 @@ function wp_ds_activation_hook()
         PRIMARY KEY (`id`)
       ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 $charset_collate";
 
-    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+    //  $sql2 = "CREATE TABLE `$table_name2` (
+    //     `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+    //     `title` text(255) NOT NULL,
+    //     `description` text(255) NOT NULL,
+    //     `date` text(255) NOT NULL,
+    //     `add_id` text(255) NOT NULL,
+    //     `image_URL` text(255) NOT NULL,
+    //     `location` text(255) NOT NULL,
+    //     `list_items` text(255) NOT NULL,
+    //     `long_desctiption` text(255) NOT NULL,
+    //     `md5_code` text(255) NOT NULL,
+    //     PRIMARY KEY (`id`)
+    //   ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 $charset_collate";
+
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name1'") != $table_name1) {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        dbDelta($sql1);
     }
-    
+    // if ($wpdb->get_var("SHOW TABLES LIKE '$table_name2'") != $table_name2) {
+    //     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    //     dbDelta($sql2);
+    // }
 }
 
 function DS_enqueue_links()
@@ -81,6 +99,7 @@ function ebay_scrapper_func()
 {
     global $wpdb;
     $table_name = $wpdb->prefix . 'ebay_listings';
+    $table_name2 = $wpdb->prefix . 'ebay_listings_permenent';
     $select_query = $wpdb->get_results("SELECT * FROM $table_name");
 
     global $wpdb;
@@ -91,10 +110,10 @@ function ebay_scrapper_func()
         echo 'Please enter correct URL';
         wp_die();
     }
-    if(!empty($select_query)){
-        echo 'Please Delete existing data';
-        wp_die();
-    }
+    // if (!empty($select_query)) {
+    //     echo 'Please Delete existing data';
+    //     wp_die();
+    // }
     $httpClient = new \GuzzleHttp\Client();
     $response = $httpClient->get($url);
     $htmlString = (string) $response->getBody();
@@ -110,21 +129,19 @@ function ebay_scrapper_func()
     $single_pg_link =  $xpath->evaluate("//ul//li//article//h2/a");
     $date = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--right']");
     $location_data = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--left']");
-    
+
     foreach ($titles as $t) {
         $title[] =  $t->textContent . PHP_EOL;
-        
     }
     foreach ($date as $dt) {
         $date_array[] =  $dt->textContent . PHP_EOL;
-        
     }
     foreach ($location_data as $locality) {
         $location[] =  $locality->textContent . PHP_EOL;
     }
-    foreach($single_pg_link as $a){
+    foreach ($single_pg_link as $a) {
         $anchor = trim($a->getAttribute('href'));
-        $link = 'https://www.ebay-kleinanzeigen.de'.  $anchor;
+        $link = 'https://www.ebay-kleinanzeigen.de' .  $anchor;
         $getresp = $httpClient->get($link);
         $htmlString_single_pg = (string) $getresp->getBody();
 
@@ -134,15 +151,14 @@ function ebay_scrapper_func()
         $xpath_single_pg = new DOMXPath($doc_sing_pg);
         $desc_sing_pg = $xpath_single_pg->evaluate("//article//p[@id='viewad-description-text']");
         $listItems = $xpath_single_pg->evaluate("//article//div[@class='splitlinebox l-container-row']//ul/li");
-       
-        foreach($desc_sing_pg as $des){
+
+        foreach ($desc_sing_pg as $des) {
             $long_desc[] = $des->textContent . PHP_EOL;
         }
         // listitems
-        foreach($listItems as $list){
+        foreach ($listItems as $list) {
             $list_item[]  = $list->textContent . PHP_EOL;
         }
-        
     }
 
     foreach ($desc as $d) {
@@ -150,14 +166,12 @@ function ebay_scrapper_func()
     }
     foreach ($addId as $add) {
         $add_id[] = trim($add->getAttribute('data-adid'));
-
     }
     foreach ($img as $i) {
         $img_all1[] = trim($i->getAttribute('src'));
-        
     }
     $table_name = $wpdb->prefix . 'ebay_listings';
-    
+
     $encode_title = json_encode($title);
     $encode_desc = json_encode($description);
     $encode_add_id = json_encode($add_id);
@@ -170,39 +184,46 @@ function ebay_scrapper_func()
     $mdf_of_add_id = md5($encode_add_id);
 
     // echo $encode_title;
-    if(!empty($encode_title)){
-    $insert_data = $wpdb->insert($table_name, array(
-        'title' => $encode_title,
-        'description' => $encode_desc,
-        'date' => $encode_date,
-        'add_id' => $encode_add_id, // ... and so on
-        'image_URL' => $encode_img_all, // ... and so on
-        'location' => $encode_locatione, // ... and so on
-        'list_items' => $encode_list_item, // ... and so on
-        'long_desctiption' => $encode_long_desc, // ... and so on
-        'md5_code' => $mdf_of_add_id, // ... and so on
-    ));
-		 if($insert_data){
-        echo 'ok';
-		}else{
-			echo 'Something went wrong';
-		}
-	}else{
-		echo 'Error in fetching data please try again later';
-	}
-   
+    if (!empty($encode_title)) {
+        $insert_data = $wpdb->insert($table_name, array(
+            'title' => $encode_title,
+            'description' => $encode_desc,
+            'date' => $encode_date,
+            'add_id' => $encode_add_id, // ... and so on
+            'image_URL' => $encode_img_all, // ... and so on
+            'location' => $encode_locatione, // ... and so on
+            'list_items' => $encode_list_item, // ... and so on
+            'long_desctiption' => $encode_long_desc, // ... and so on
+            'md5_code' => $mdf_of_add_id, // ... and so on
+        ));
+        // $insert_data2 = $wpdb->insert($table_name2, array(
+        //     'title' => $encode_title,
+        //     'description' => $encode_desc,
+        //     'date' => $encode_date,
+        //     'add_id' => $encode_add_id, // ... and so on
+        //     'image_URL' => $encode_img_all, // ... and so on
+        //     'location' => $encode_locatione, // ... and so on
+        //     'list_items' => $encode_list_item, // ... and so on
+        //     'long_desctiption' => $encode_long_desc, // ... and so on
+        //     'md5_code' => $mdf_of_add_id, // ... and so on
+        // ));
+        if ($insert_data) {
+            echo 'ok';
+        } else {
+            echo 'Something went wrong';
+        }
+    } else {
+        echo 'Error in fetching data please try again later';
+    }
 }
 
-add_action('wp_ajax_ebay_compare_func' , 'ebay_compare_func');
-function ebay_compare_func(){
+add_action('wp_ajax_ebay_compare_func', 'ebay_compare_func');
+function ebay_compare_func()
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'ebay_listings';
     $old_md5 = $wpdb->get_results("SELECT md5_code FROM $table_name");
-    
-    // foreach($select_query as $d){
-    //     $a[] = $d->add_id;
-    //     }
-      
+
     $url = $_POST['data_url'];
     $httpClient = new \GuzzleHttp\Client();
     $response = $httpClient->get($url);
@@ -212,77 +233,168 @@ function ebay_compare_func(){
     $doc = new DOMDocument();
     $doc->loadHTML($htmlString);
     $xpath = new DOMXPath($doc);
-    // $titles = $xpath->evaluate("//ul//li//article//h2/a");
-    // $desc = $xpath->evaluate("//p[@class='aditem-main--middle--description']");
+    $titles = $xpath->evaluate("//ul//li//article//h2/a");
+    $desc = $xpath->evaluate("//p[@class='aditem-main--middle--description']");
     $addId = $xpath->evaluate("//article");
-    // $img = $xpath->evaluate("//article//div[@class='imagebox srpimagebox']/img");
-    // $single_pg_link =  $xpath->evaluate("//ul//li//article//h2/a");
-    // $date = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--right']");
-    // $location_data = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--left']");
+    $img = $xpath->evaluate("//article//div[@class='imagebox srpimagebox']/img");
+    $single_pg_link =  $xpath->evaluate("//ul//li//article//h2/a");
+    $date = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--right']");
+    $location_data = $xpath->evaluate("//article//div[@class='aditem-main--top']/div[@class='aditem-main--top--left']");
 
+    foreach ($titles as $t) {
+        $title[] =  $t->textContent . PHP_EOL;
+    }
+    foreach ($date as $dt) {
+        $date_array[] =  $dt->textContent . PHP_EOL;
+    }
+    foreach ($location_data as $locality) {
+        $location[] =  $locality->textContent . PHP_EOL;
+    }
+    foreach ($single_pg_link as $a) {
+        $anchor = trim($a->getAttribute('href'));
+        $link = 'https://www.ebay-kleinanzeigen.de' .  $anchor;
+        $getresp = $httpClient->get($link);
+        $htmlString_single_pg = (string) $getresp->getBody();
+
+        libxml_use_internal_errors(true);
+        $doc_sing_pg = new DOMDocument();
+        $doc_sing_pg->loadHTML($htmlString_single_pg);
+        $xpath_single_pg = new DOMXPath($doc_sing_pg);
+        $desc_sing_pg = $xpath_single_pg->evaluate("//article//p[@id='viewad-description-text']");
+        $listItems = $xpath_single_pg->evaluate("//article//div[@class='splitlinebox l-container-row']//ul/li");
+
+        foreach ($desc_sing_pg as $des) {
+            $long_desc[] = $des->textContent . PHP_EOL;
+        }
+        // listitems
+        foreach ($listItems as $list) {
+            $list_item[]  = $list->textContent . PHP_EOL;
+        }
+    }
+
+    foreach ($desc as $d) {
+        $description[] = $d->textContent . PHP_EOL;
+    }
     foreach ($addId as $add) {
         $add_id[] = trim($add->getAttribute('data-adid'));
     }
-    // print_r($add_id);
+    foreach ($img as $i) {
+        $img_all1[] = trim($i->getAttribute('src'));
+    }
+
+
+    $encode_title = json_encode($title);
+    $encode_desc = json_encode($description);
+    $encode_img_all = json_encode($img_all1);
+    $encode_date = json_encode($date_array);
+    $encode_locatione = json_encode($location);
+    $encode_list_item = json_encode($list_item);
+    $encode_long_desc = json_encode($long_desc);
     $encode_add_id = json_encode($add_id);
+
+    // print_r($add_id);
     $md5_add_id = md5($encode_add_id);
     // echo $encode_add_id;
-    if($md5_add_id == $old_md5[0]->md5_code){
-        echo 'Data is same';
-        wp_die();
-    }else{
-        echo 'Some Changes in the Data';
-        wp_die();
+    foreach($old_md5 as $md_hash){
+        if ($md5_add_id == $md_hash->md5_code) {
+            echo 'Data is same';
+            wp_die();
+        } else {
+            echo 'Some Changes in the Data';
+            $update_data = $wpdb->update( $table_name,
+            array(
+                'title' => $encode_title,
+                'description' => $encode_desc,
+                'date' => $encode_date,
+                'add_id' => $encode_add_id, // ... and so on
+                'image_URL' => $encode_img_all, // ... and so on
+                'location' => $encode_locatione, // ... and so on
+                'list_items' => $encode_list_item, // ... and so on
+                'long_desctiption' => $encode_long_desc, // ... and so on
+                'md5_code' => $md5_add_id, // ... and so on
+    
+           ),array('md5_code'=>$md_hash->md5_code));
+            wp_die();
+        }
     }
     
 }
 
-add_action('wp_ajax_insert_data_to_post_type_func' , 'insert_data_to_post_type_func');
-function insert_data_to_post_type_func(){
+add_action('wp_ajax_insert_data_to_post_type_func', 'insert_data_to_post_type_func');
+function insert_data_to_post_type_func()
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'ebay_listings';
     $select_query =  $wpdb->get_results("SELECT * FROM $table_name LIMIT 1");
-    foreach($select_query as $sq){
+    foreach ($select_query as $sq) {
         $heading = $sq->title;
         $x = json_decode($heading);
-        
+
         $des = $sq->long_desctiption;
         $y = json_decode($des);
         $z = json_decode($sq->add_id);
-        
-        foreach($x as $tx){
+        $imgs = json_decode($sq->image_URL);
+        $date = json_decode($sq->date);
+        $location = json_decode($sq->location);
+        $list_items = json_decode($sq->list_items);
+
+        foreach ($x as $tx) {
             $title[] = $tx;
         }
-        foreach($y as $lng_des){
+        foreach ($y as $lng_des) {
             $description[] = $lng_des;
         }
-        
-        foreach($z as $add){
+
+        foreach ($z as $add) {
             $add_id[] = $add;
         }
-        $i = -1;
-        foreach($add_id as $a){
-            $i++;
-            
-            // wp_die();
-             $post_id = wp_insert_post(array (
-            'post_type' => 'post',
-            'post_title' => $title[$i],
-            'post_content' => empty($description[$i])? '...' : $description[$i],
-            'post_status' => 'publish',
-            'comment_status' => 'closed',   // if you prefer
-            'meta_input' => $a,
-         ));    
-         if( $post_id){
-                echo 'Data inserted';
-                wp_die();
-            }else{
-                echo 'Something went wrong';
-                wp_die();
-         }
+        foreach ($date as $dt) {
+            $eb_date[] = $dt;
         }
-       
-        
-    }
+        foreach ($location as $loc) {
+            $locality[] = $loc;
+        }
+        foreach ($list_items as $lit) {
+            $listings[] = $lit;
+        }
+        $i = -1;
+        foreach ($imgs as $sd) {
+            $i++;
+            $image_name = basename($sd);
+            $post_id = wp_insert_post(array(
+                'post_type' => 'post',
+                'post_title' => $title[$i],
+                'post_content' => 'Date:' . $eb_date[$i] . 'Location:' . $locality[$i] . empty($description[$i]) ? '...' : $description[$i] . 'List items:' . $listings[$i],
+                'post_status' => 'publish',
+                'comment_status' => 'closed',   // if you prefer
+                'meta_input' => $add_id[$i],
+            ));
+            $upload = wp_upload_bits($image_name, null, file_get_contents($sd, FILE_USE_INCLUDE_PATH));
+            $imageFile = $upload['file'];
+            $wpFileType = wp_check_filetype($imageFile, null);
+            $attachment = array(
+                'post_mime_type' => $wpFileType['type'],  // file type
+                'post_title' => sanitize_file_name($imageFile),  // sanitize and use image name as file name
+                'post_content' => '',  // could use the image description here as the content
+                'post_status' => 'inherit'
+            );
+            $attachmentId = wp_insert_attachment($attachment, $imageFile, $post_id);
 
+            // insert and return attachment metadata
+            $attachmentData = wp_generate_attachment_metadata($attachmentId, $imageFile);
+
+            // update and return attachment metadata
+            wp_update_attachment_metadata($attachmentId, $attachmentData);
+
+            // finally, associate attachment id to post id
+            $success = set_post_thumbnail($post_id, $attachmentId);
+
+            if ($success) {
+                echo 'Data and images have been inserted';
+            } else {
+                echo 'Something went wrong';
+            }
+        }
+        wp_die();
+    }
 }
