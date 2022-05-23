@@ -44,34 +44,17 @@ function wp_ds_activation_hook()
         PRIMARY KEY (`id`)
       ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 $charset_collate";
 
-    //  $sql2 = "CREATE TABLE `$table_name2` (
-    //     `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-    //     `title` text(255) NOT NULL,
-    //     `description` text(255) NOT NULL,
-    //     `date` text(255) NOT NULL,
-    //     `add_id` text(255) NOT NULL,
-    //     `image_URL` text(255) NOT NULL,
-    //     `location` text(255) NOT NULL,
-    //     `list_items` text(255) NOT NULL,
-    //     `long_desctiption` text(255) NOT NULL,
-    //     `md5_code` text(255) NOT NULL,
-    //     PRIMARY KEY (`id`)
-    //   ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 $charset_collate";
-
     if ($wpdb->get_var("SHOW TABLES LIKE '$table_name1'") != $table_name1) {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql1);
     }
-    // if ($wpdb->get_var("SHOW TABLES LIKE '$table_name2'") != $table_name2) {
-    //     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    //     dbDelta($sql2);
-    // }
 }
 
 function DS_enqueue_links()
 {
     wp_enqueue_script('jquery');
     wp_enqueue_script('custom-ajax-script', plugin_dir_url(__FILE__) . 'assets/js/admin-ajax.js');
+    wp_enqueue_style('custom-style', plugin_dir_url(__FILE__) . 'assets/css/style.css');
     wp_localize_script(
         'custom-ajax-script',
         'scrapper_ajax',
@@ -298,9 +281,7 @@ function ebay_compare_func()
     foreach($old_md5 as $md_hash){
         if ($md5_add_id == $md_hash->md5_code) {
             echo 'Data is same';
-            wp_die();
         } else {
-            echo 'Some Changes in the Data';
             $update_data = $wpdb->update( $table_name,
             array(
                 'title' => $encode_title,
@@ -314,9 +295,15 @@ function ebay_compare_func()
                 'md5_code' => $md5_add_id, // ... and so on
     
            ),array('md5_code'=>$md_hash->md5_code));
-            wp_die();
+           if($update_data){
+                echo 'Some Changes in the Data';
+           }
+
+            // wp_die();
         }
     }
+    wp_die();
+
     
 }
 
@@ -326,6 +313,7 @@ function insert_data_to_post_type_func()
     global $wpdb;
     $table_name = $wpdb->prefix . 'ebay_listings';
     $select_query =  $wpdb->get_results("SELECT * FROM $table_name LIMIT 1");
+    $user_id_get = $_POST['userID'];
     foreach ($select_query as $sq) {
         $heading = $sq->title;
         $x = json_decode($heading);
@@ -362,7 +350,8 @@ function insert_data_to_post_type_func()
             $i++;
             $image_name = basename($sd);
             $post_id = wp_insert_post(array(
-                'post_type' => 'post',
+                'post_author' => $user_id_get,
+                'post_type' => 'advert',
                 'post_title' => $title[$i],
                 'post_content' => 'Date:' . $eb_date[$i] . 'Location:' . $locality[$i] . empty($description[$i]) ? '...' : $description[$i] . 'List items:' . $listings[$i],
                 'post_status' => 'publish',

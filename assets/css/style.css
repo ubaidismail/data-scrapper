@@ -2,3 +2,14 @@
     display: flex;
     justify-content: space-evenly;
 }
+form#get_selected_user_form label {
+    text-transform: capitalize;
+    font-weight: 700;
+}
+
+form#get_selected_user_form input[type='submit'] {
+    background-color: #000;
+    color: white;
+    margin: 10px 0;
+    padding: 6px 33px;
+}

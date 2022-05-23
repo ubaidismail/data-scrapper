@@ -3,6 +3,8 @@ jQuery(document).ready(function($){
     $('.fetching-data2').hide();
     $('.fetching-data3').hide();
     $('.compare-data1').hide();
+    $('.inserting-data').hide();
+
     $('#scrapper_form1').on('submit' , function(e){
         e.preventDefault();
         $('.fetching-data1').show();
@@ -67,17 +69,28 @@ jQuery(document).ready(function($){
         })
     })
   
-  $('.insert_new_post').click(function(){
-      
+  $('#get_selected_user_form').on('submit' , function(e){
+    e.preventDefault();
+    $('.inserting-data').show();
+    var checkedValue = $('#get_selected_user_form input:checked').attr('date-userID');
+    if(!checkedValue){
+        $('.inserting-data').hide();
+        alert('Please select user')
+        return;
+    }
+
+      e.preventDefault();
       $.ajax({
         type: 'POST',
         url: scrapper_ajax.ajaxurl,
         data:{
             action: 'insert_data_to_post_type_func',
+            userID: checkedValue,
         },success:function(data){
-            
+            $('.inserting-data').hide();
             alert('Data inserted');
         },error:function(errorThrown){
+            $('.inserting-data').hide();
             console.error(errorThrown);
             alert('failure');
         }

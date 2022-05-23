@@ -28,6 +28,21 @@ if (empty($select_query)) {
 
 <h3><a href="<?php echo esc_url($check1) ?>">Delete All</a></h3>
 <!-- <h3><a href="javascript:void(0)" class='insert_new_post'>Insert In Post</a></h3> -->
+<form id='get_selected_user_form'>
+<?php  $blogusers = get_users();
+foreach ( $blogusers as $user ) {
+    ?>
+            <label for="" style='display:block;'>
+                <input type="checkbox" date-userID='<?php echo $user->ID;  ?>'  value='<?php echo $user->display_name ; ?>'>
+                Username: <?php echo $user->display_name; ?>
+            </label>
+    <?php
+}
+
+?>
+<input type="submit" name='submit-insert-post' class='insert_new_post'>
+<span class='inserting-data'>Inserting Data...</span>
+</form>
     <table class="widefat fixed" cellspacing="0">
         <tr>
             <th>S.no</th>
