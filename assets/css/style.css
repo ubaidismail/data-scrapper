@@ -13,3 +13,10 @@ form#get_selected_user_form input[type='submit'] {
     margin: 10px 0;
     padding: 6px 33px;
 }
+form#get_selected_user_form {
+    height: 200px;
+    overflow: scroll;
+    width: 50%;
+    background-color: white;
+    padding: 10px;
+}

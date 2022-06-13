@@ -18,14 +18,14 @@ class ds_proxy {
 	 *
 	 * @var ds_proxy
 	 */
-	protected static $instance = null;
+	public static $instance = null;
 
 	/**
 	 * The proxy options
 	 *
 	 * @var ds_proxy_option
 	 */
-	protected $options = array();
+	public $options = array();
 
 	/**
 	 * ds_proxy Construct

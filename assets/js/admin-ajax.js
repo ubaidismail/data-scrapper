@@ -4,17 +4,21 @@ jQuery(document).ready(function($){
     $('.fetching-data3').hide();
     $('.compare-data1').hide();
     $('.inserting-data').hide();
-
+    
     $('#scrapper_form1').on('submit' , function(e){
         e.preventDefault();
         $('.fetching-data1').show();
-        let inputUrl = $('input[name="get_URL"]').val();
+        let inputUrl = $("input[name='get_URL']").val();
+        $('#scrapper_form1 input[type="submit"]').prop('disabled' , true);
+        $('#scrapper_form1 input[type="submit"]').css('cursor' , 'not-allowed');
 
         var url_validate = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
 
             if(!url_validate.test(inputUrl)){
                 alert('Enter a correct URL');
                 $('.fetching-data1').hide();
+                $('#scrapper_form1 input[type="submit"]').prop('disabled' , false);
+                $('#scrapper_form1 input[type="submit"]').css('cursor' , 'pointer');
                 return;
             }
 
@@ -27,8 +31,13 @@ jQuery(document).ready(function($){
                 data_url: inputUrl,
             },success:function(data){
                 $('.fetching-data1').hide();
+                $('#scrapper_form1 input[type="submit"]').prop('disabled' , false);
+                $('#scrapper_form1 input[type="submit"]').css('cursor' , 'pointer');
                 alert('Success');
+                location.reload();
             },error:function(errorThrown){
+                $('#scrapper_form1 input[type="submit"]').prop('disabled' , false);
+                $('#scrapper_form1 input[type="submit"]').css('cursor' , 'pointer');
                 $('.fetching-data1').hide();
                 console.error(errorThrown);
                 alert('failure');
@@ -61,6 +70,7 @@ jQuery(document).ready(function($){
             },success:function(data){
                 $('.compare-data1').hide();
                 alert(data);
+                // location.reload();
             },error:function(errorThrown){
                 $('.compare-data1').hide();
                 console.error(errorThrown);

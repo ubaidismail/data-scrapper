@@ -1,11 +1,18 @@
 <?php
-
+global $wpdb;
+$table_name = $wpdb->prefix . 'ebay_listings';
+$select_query =  $wpdb->get_results("SELECT * FROM $table_name ");
 function DS_add_compare_listing_pg()
 {
     add_options_page('Compare Listings', 'Compare Listings', 'manage_options', 'ds-compare', 'DS_compare_listings');
 }
+
 add_action('admin_menu', 'DS_add_compare_listing_pg');
 
+if(empty($select_query)){
+    echo '<h3 style="color:red;">There is no data in fetching list to compare. Please fetch the data first.</h3>';
+    return;
+}else{
 function DS_compare_listings(){
     ?>
         <h1>Compare Exisiting Listings</h1>
@@ -20,4 +27,5 @@ function DS_compare_listings(){
             <span class="compare-data1">Comparing Data...</span>
         </div>
     <?php
+    }
 }

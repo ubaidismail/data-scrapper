@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 
 require 'vendor/autoload.php';
 
@@ -77,6 +78,7 @@ if (is_admin()) {
 
     $GLOBALS['ds_proxy'] = ds_proxy();
 }
+
 add_action('wp_ajax_ebay_scrapper_func', 'ebay_scrapper_func');
 function ebay_scrapper_func()
 {
@@ -93,11 +95,22 @@ function ebay_scrapper_func()
         echo 'Please enter correct URL';
         wp_die();
     }
-    // if (!empty($select_query)) {
-    //     echo 'Please Delete existing data';
-    //     wp_die();
-    // }
-    $httpClient = new \GuzzleHttp\Client();
+   
+    $PROXY_TYPE = ds_proxy()->options['type'];
+    $PROXY_USER = ds_proxy()->options['username'];
+    $PROXY_PASS = ds_proxy()->options['password'];
+    $PROXY_IP = ds_proxy()->options['proxy_host'];
+    $PROXY_PORT = ds_proxy()->options['proxy_port'];
+
+    $httpClient = new \GuzzleHttp\Client(
+        [
+            'proxy' => $PROXY_USER . ':' . $PROXY_PASS . '@' . $PROXY_IP . ':' . $PROXY_PORT, //use without "socks5://" scheme
+            'verify' => true, // used only for SSL check , u can set false too for not check
+            'curl' => [CURLOPT_PROXYTYPE => 7],
+
+        ]
+    );
+
     $response = $httpClient->get($url);
     $htmlString = (string) $response->getBody();
 
@@ -163,11 +176,12 @@ function ebay_scrapper_func()
     $encode_locatione = json_encode($location);
     $encode_list_item = json_encode($list_item);
     $encode_long_desc = json_encode($long_desc);
+    print_r($encode_title);
 
     $mdf_of_add_id = md5($encode_add_id);
 
     // echo $encode_title;
-    if (!empty($encode_title)) {
+    if (!is_null($encode_title)) {
         $insert_data = $wpdb->insert($table_name, array(
             'title' => $encode_title,
             'description' => $encode_desc,
@@ -179,21 +193,11 @@ function ebay_scrapper_func()
             'long_desctiption' => $encode_long_desc, // ... and so on
             'md5_code' => $mdf_of_add_id, // ... and so on
         ));
-        // $insert_data2 = $wpdb->insert($table_name2, array(
-        //     'title' => $encode_title,
-        //     'description' => $encode_desc,
-        //     'date' => $encode_date,
-        //     'add_id' => $encode_add_id, // ... and so on
-        //     'image_URL' => $encode_img_all, // ... and so on
-        //     'location' => $encode_locatione, // ... and so on
-        //     'list_items' => $encode_list_item, // ... and so on
-        //     'long_desctiption' => $encode_long_desc, // ... and so on
-        //     'md5_code' => $mdf_of_add_id, // ... and so on
-        // ));
+
         if ($insert_data) {
             echo 'ok';
         } else {
-            echo 'Something went wrong';
+            echo 'Something went wrong in inserting data';
         }
     } else {
         echo 'Error in fetching data please try again later';
@@ -208,7 +212,20 @@ function ebay_compare_func()
     $old_md5 = $wpdb->get_results("SELECT md5_code FROM $table_name");
 
     $url = $_POST['data_url'];
-    $httpClient = new \GuzzleHttp\Client();
+    $PROXY_TYPE = ds_proxy()->options['type'];
+    $PROXY_USER = ds_proxy()->options['username'];
+    $PROXY_PASS = ds_proxy()->options['password'];
+    $PROXY_IP = ds_proxy()->options['proxy_host'];
+    $PROXY_PORT = ds_proxy()->options['proxy_port'];
+
+    $httpClient = new \GuzzleHttp\Client(
+        [
+            'proxy' => $PROXY_USER . ':' . $PROXY_PASS . '@' . $PROXY_IP . ':' . $PROXY_PORT, //use without "socks5://" scheme
+            'verify' => true, // used only for SSL check , u can set false too for not check
+            'curl' => [CURLOPT_PROXYTYPE => 7],
+
+        ]
+    );
     $response = $httpClient->get($url);
     $htmlString = (string) $response->getBody();
 
@@ -278,33 +295,33 @@ function ebay_compare_func()
     // print_r($add_id);
     $md5_add_id = md5($encode_add_id);
     // echo $encode_add_id;
-    foreach($old_md5 as $md_hash){
+    foreach ($old_md5 as $md_hash) {
         if ($md5_add_id == $md_hash->md5_code) {
             echo 'Data is same';
         } else {
-            $update_data = $wpdb->update( $table_name,
-            array(
-                'title' => $encode_title,
-                'description' => $encode_desc,
-                'date' => $encode_date,
-                'add_id' => $encode_add_id, // ... and so on
-                'image_URL' => $encode_img_all, // ... and so on
-                'location' => $encode_locatione, // ... and so on
-                'list_items' => $encode_list_item, // ... and so on
-                'long_desctiption' => $encode_long_desc, // ... and so on
-                'md5_code' => $md5_add_id, // ... and so on
-    
-           ),array('md5_code'=>$md_hash->md5_code));
-           if($update_data){
-                echo 'Some Changes in the Data';
-           }
+            $update_data = $wpdb->update(
+                $table_name,
+                array(
+                    'title' => $encode_title,
+                    'description' => $encode_desc,
+                    'date' => $encode_date,
+                    'add_id' => $encode_add_id, // ... and so on
+                    'image_URL' => $encode_img_all, // ... and so on
+                    'location' => $encode_locatione, // ... and so on
+                    'list_items' => $encode_list_item, // ... and so on
+                    'long_desctiption' => $encode_long_desc, // ... and so on
+                    'md5_code' => $md5_add_id, // ... and so on
 
-            // wp_die();
+                ),
+                array('md5_code' => $md_hash->md5_code)
+            );
+            if ($update_data) {
+                echo 'Some Changes in the Data';
+            }
+
         }
     }
     wp_die();
-
-    
 }
 
 add_action('wp_ajax_insert_data_to_post_type_func', 'insert_data_to_post_type_func');
