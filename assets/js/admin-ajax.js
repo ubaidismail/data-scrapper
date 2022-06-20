@@ -34,7 +34,7 @@ jQuery(document).ready(function($){
                 $('#scrapper_form1 input[type="submit"]').prop('disabled' , false);
                 $('#scrapper_form1 input[type="submit"]').css('cursor' , 'pointer');
                 alert('Success');
-                location.reload();
+                // location.reload();
             },error:function(errorThrown){
                 $('#scrapper_form1 input[type="submit"]').prop('disabled' , false);
                 $('#scrapper_form1 input[type="submit"]').css('cursor' , 'pointer');

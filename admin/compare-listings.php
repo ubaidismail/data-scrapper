@@ -9,11 +9,12 @@ function DS_add_compare_listing_pg()
 
 add_action('admin_menu', 'DS_add_compare_listing_pg');
 
-if(empty($select_query)){
-    echo '<h3 style="color:red;">There is no data in fetching list to compare. Please fetch the data first.</h3>';
-    return;
-}else{
+
 function DS_compare_listings(){
+    if(empty($select_query)){
+        echo '<h3 style="color:red;">There is no data in fetching list to compare. Please fetch the data first.</h3>';
+        return;
+    }else{
     ?>
         <h1>Compare Exisiting Listings</h1>
     <div class="flex-fetch-admin">

@@ -51,9 +51,11 @@ foreach ( $blogusers as $user ) {
             <th>Date</th>
             <th>Add Id</th>
             <th>Image URL</th>
+            <th>Gallery URL</th>
             <th>Location</th>
             <th>List Items</th>
             <th>Long Description</th>
+            <th>Price</th>
 
         </tr>
         <?php
@@ -67,9 +69,11 @@ foreach ( $blogusers as $user ) {
             $date[] = json_decode($sql->date);
             $addID[] = json_decode($sql->add_id);
             $image_URL[] = json_decode($sql->image_URL);
+            $gallery[] = json_decode($sql->gallery_urls);
             $location[] = json_decode($sql->location);
             $list_items[] = json_decode($sql->list_items);
             $long_desctiption[] = json_decode($sql->long_desctiption);
+            $price[] = json_decode($sql->price);
         
         $x = -1;
         $number = 0;
@@ -84,10 +88,13 @@ foreach ( $blogusers as $user ) {
                 <td class='tb1-desc1'><?php echo $desc[$entries][$x] ?></td>
                 <td class='tb1-date1'><?php echo $date[$entries][$x] ?></td>
                 <td class='tb1-addId1'><?php echo $addID[$entries][$x] ?></td>
-                <td class='tb1-image_ur1'><?php echo $image_URL[$entries][$x] ?></td>
+                <td class='tb1-image_ur1'><?php echo $image_URL[$entries][$x] ?></td>                
+                <td class='tb1-image_ur1'><?php echo $gallery[$entries][$x] ?></td>                
                 <td class='tb1-location1'><?php echo $location[$entries][$x] ?></td>
                 <td class='tb1-list_items1'><?php echo $list_items[$entries][$x] ?></td>
                 <td class='tb1-long-des'><p><?php echo $long_desctiption[$entries][$x] ?></p></td>
+                <td class='tb1-price'><p><?php echo $price[$entries][$x] ?></p></td>
+                
         </tr>
             <?php
         }

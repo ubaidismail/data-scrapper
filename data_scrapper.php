@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 /**
  * Plugin Name: Data Scrapper
@@ -38,9 +38,11 @@ function wp_ds_activation_hook()
         `date` text(255) NOT NULL,
         `add_id` text(255) NOT NULL,
         `image_URL` text(255) NOT NULL,
+        `gallery_urls` text(255) NOT NULL,
         `location` text(255) NOT NULL,
         `list_items` text(255) NOT NULL,
         `long_desctiption` text(255) NOT NULL,
+        `price` text(255) NOT NULL,
         `md5_code` text(255) NOT NULL,
         PRIMARY KEY (`id`)
       ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 $charset_collate";
@@ -50,7 +52,14 @@ function wp_ds_activation_hook()
         dbDelta($sql1);
     }
 }
-
+function delete_students_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ebay_listings';
+    $sql = "DROP TABLE IF EXISTS $table_name";
+    $wpdb->query($sql);
+    delete_option("DS_plugin_db_version");
+}
+register_deactivation_hook( __FILE__, 'delete_students_table' );
 function DS_enqueue_links()
 {
     wp_enqueue_script('jquery');
@@ -65,6 +74,11 @@ function DS_enqueue_links()
     );
 }
 add_action('admin_enqueue_scripts', 'DS_enqueue_links');
+
+function DS_frontend(){
+    wp_enqueue_script('jquery');
+}
+add_action('init' , 'DS_frontend');
 
 if (is_admin()) {
     include(plugin_dir_path(__FILE__) . '/admin/admin-settings.php');
@@ -147,6 +161,8 @@ function ebay_scrapper_func()
         $xpath_single_pg = new DOMXPath($doc_sing_pg);
         $desc_sing_pg = $xpath_single_pg->evaluate("//article//p[@id='viewad-description-text']");
         $listItems = $xpath_single_pg->evaluate("//article//div[@class='splitlinebox l-container-row']//ul/li");
+        $galler_imgs = $xpath_single_pg->evaluate("//article//div[@class='galleryimage-element']/img");
+        $price = $xpath_single_pg->evaluate("//article//div[@class='contentbox--vip boxedarticle no-shadow l-container-row']/meta");
 
         foreach ($desc_sing_pg as $des) {
             $long_desc[] = $des->textContent . PHP_EOL;
@@ -155,6 +171,14 @@ function ebay_scrapper_func()
         foreach ($listItems as $list) {
             $list_item[]  = $list->textContent . PHP_EOL;
         }
+        //galler_images
+        foreach ($galler_imgs as $gallery) {
+            $gallery_all_images[] = trim($gallery->getAttribute('src'));
+        }
+        foreach ($price as $pr) {
+            $obje_price[] = trim($pr->getAttribute('content'));
+        }
+        
     }
 
     foreach ($desc as $d) {
@@ -176,8 +200,10 @@ function ebay_scrapper_func()
     $encode_locatione = json_encode($location);
     $encode_list_item = json_encode($list_item);
     $encode_long_desc = json_encode($long_desc);
-    print_r($encode_title);
-
+    $encode_gallery_imgs = json_encode($gallery_all_images);
+    $encode_obje_price = json_encode($obje_price);
+    print_r($encode_obje_price);
+    // exit;
     $mdf_of_add_id = md5($encode_add_id);
 
     // echo $encode_title;
@@ -188,9 +214,11 @@ function ebay_scrapper_func()
             'date' => $encode_date,
             'add_id' => $encode_add_id, // ... and so on
             'image_URL' => $encode_img_all, // ... and so on
+            'gallery_urls' => $encode_gallery_imgs, // ... and so on
             'location' => $encode_locatione, // ... and so on
             'list_items' => $encode_list_item, // ... and so on
             'long_desctiption' => $encode_long_desc, // ... and so on
+            'price' => $encode_obje_price, // ... and so on
             'md5_code' => $mdf_of_add_id, // ... and so on
         ));
 
@@ -262,6 +290,8 @@ function ebay_compare_func()
         $xpath_single_pg = new DOMXPath($doc_sing_pg);
         $desc_sing_pg = $xpath_single_pg->evaluate("//article//p[@id='viewad-description-text']");
         $listItems = $xpath_single_pg->evaluate("//article//div[@class='splitlinebox l-container-row']//ul/li");
+        $galler_imgs = $xpath_single_pg->evaluate("//article//div[@class='galleryimage-element']/img");
+        $price = $xpath_single_pg->evaluate("//article//div[@class='contentbox--vip boxedarticle no-shadow l-container-row']/meta");
 
         foreach ($desc_sing_pg as $des) {
             $long_desc[] = $des->textContent . PHP_EOL;
@@ -269,6 +299,12 @@ function ebay_compare_func()
         // listitems
         foreach ($listItems as $list) {
             $list_item[]  = $list->textContent . PHP_EOL;
+        }
+        foreach ($galler_imgs as $gallery) {
+            $gallery_all_images[] = trim($gallery->getAttribute('src'));
+        }
+        foreach ($price as $pr) {
+            $obje_price[] = trim($pr->getAttribute('content'));
         }
     }
 
@@ -290,7 +326,9 @@ function ebay_compare_func()
     $encode_locatione = json_encode($location);
     $encode_list_item = json_encode($list_item);
     $encode_long_desc = json_encode($long_desc);
+    $encode_gallery_all_images = json_encode($gallery_all_images);
     $encode_add_id = json_encode($add_id);
+    $encode_obje_price = json_encode($obje_price);
 
     // print_r($add_id);
     $md5_add_id = md5($encode_add_id);
@@ -307,9 +345,11 @@ function ebay_compare_func()
                     'date' => $encode_date,
                     'add_id' => $encode_add_id, // ... and so on
                     'image_URL' => $encode_img_all, // ... and so on
+                    'gallery_urls' => $encode_gallery_all_images, // ... and so on
                     'location' => $encode_locatione, // ... and so on
                     'list_items' => $encode_list_item, // ... and so on
                     'long_desctiption' => $encode_long_desc, // ... and so on
+                    'price' => $encode_obje_price, // ... and so on
                     'md5_code' => $md5_add_id, // ... and so on
 
                 ),
@@ -327,11 +367,13 @@ function ebay_compare_func()
 add_action('wp_ajax_insert_data_to_post_type_func', 'insert_data_to_post_type_func');
 function insert_data_to_post_type_func()
 {
+   
     global $wpdb;
     $table_name = $wpdb->prefix . 'ebay_listings';
     $select_query =  $wpdb->get_results("SELECT * FROM $table_name LIMIT 1");
     $user_id_get = $_POST['userID'];
     foreach ($select_query as $sq) {
+        
         $heading = $sq->title;
         $x = json_decode($heading);
 
@@ -342,6 +384,7 @@ function insert_data_to_post_type_func()
         $date = json_decode($sq->date);
         $location = json_decode($sq->location);
         $list_items = json_decode($sq->list_items);
+        $price = json_decode($sq->price);
 
         foreach ($x as $tx) {
             $title[] = $tx;
@@ -362,22 +405,38 @@ function insert_data_to_post_type_func()
         foreach ($list_items as $lit) {
             $listings[] = $lit;
         }
+        foreach ($price as $p) {
+            $pricing[] = $p;
+        }
         $i = -1;
+      
         foreach ($imgs as $sd) {
+          
             $i++;
             $image_name = basename($sd);
-            $post_id = wp_insert_post(array(
+           
+            $advert_posts = array(
+                'post_title' => $title[$i],
+                'post_content' => $description[$i] . $listings[$i],
+                'post_status' => 'publish',
                 'post_author' => $user_id_get,
                 'post_type' => 'advert',
-                'post_title' => $title[$i],
-                'post_content' => 'Date:' . $eb_date[$i] . 'Location:' . $locality[$i] . empty($description[$i]) ? '...' : $description[$i] . 'List items:' . $listings[$i],
-                'post_status' => 'publish',
-                'comment_status' => 'closed',   // if you prefer
-                'meta_input' => $add_id[$i],
-            ));
+                'comment_status' => 'open',
+            );
+            $post_id = wp_insert_post($advert_posts);
+            $category_id = 877;
+            $taxonomy = 'advert-category';
+            wp_set_object_terms( $post_id, array( $category_id ), $taxonomy , true );
+            add_post_meta( $post_id , 'advert_sale_price' , $pricing[$i]);
+            add_post_meta( $post_id , 'advert_type' , 1);
+            add_post_meta( $post_id , 'advert_negotiable' , 1);
+            add_post_meta( $post_id , 'advert_location' , $locality[$i]);
+            
             $upload = wp_upload_bits($image_name, null, file_get_contents($sd, FILE_USE_INCLUDE_PATH));
             $imageFile = $upload['file'];
             $wpFileType = wp_check_filetype($imageFile, null);
+          
+            // rwmb_set_meta( $post_id, 'advert_gallery', $imageFile, $args = [] );
             $attachment = array(
                 'post_mime_type' => $wpFileType['type'],  // file type
                 'post_title' => sanitize_file_name($imageFile),  // sanitize and use image name as file name
@@ -391,10 +450,10 @@ function insert_data_to_post_type_func()
 
             // update and return attachment metadata
             wp_update_attachment_metadata($attachmentId, $attachmentData);
-
             // finally, associate attachment id to post id
             $success = set_post_thumbnail($post_id, $attachmentId);
-
+            add_post_meta( $post_id , 'advert_gallery' , set_post_thumbnail($post_id, $attachmentId));
+            
             if ($success) {
                 echo 'Data and images have been inserted';
             } else {
